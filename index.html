@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="포켓몬 구구단">
+<meta name="mobile-web-app-capable" content="yes">
+<link id="appleTouchIcon" rel="apple-touch-icon" sizes="512x512" href="">
+<link id="favIcon" rel="icon" type="image/png" href="">
+<title>포켓몬 구구단 & 19단 트레이닝 마스터</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+  :root {
+    --poke-red: #EE1515;
+    --poke-dark: #222224;
+    --poke-blue: #3B4CCA;
+    --poke-yellow: #FFDE00;
+    --poke-gold: #B3A125;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  button {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #312e81 100%);
+    color: #1e293b;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .font-jua {
+    font-family: 'Jua', sans-serif;
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 540px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  @media (min-width: 560px) {
+    .app-container {
+      min-height: 92vh;
+      max-height: 95vh;
+      border-radius: 28px;
+      overflow: hidden;
+    }
+  }
+
+  /* 희미한 안개 실루엣 (포획 전 정체 비공개) */
+  .poke-img {
+    max-height: 124px;
+    max-width: 124px;
+    object-fit: contain;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.2));
+  }
+
+  .poke-img.silhouette {
+    filter: brightness(0) opacity(0.13) blur(5px);
+    transform: scale(0.95);
+  }
+
+  .dex-thumb {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    margin: 0 auto;
+    transition: filter 0.3s ease;
+  }
+
+  .dex-thumb.silhouette {
+    filter: brightness(0) opacity(0.13) blur(5px);
+  }
+
+  .poke-img.bounce {
+    transform: scale(1.18);
+  }
+
+  .gmax-aura {
+    border-color: #ec4899 !important;
+    box-shadow: 0 0 24px rgba(236, 72, 153, 0.38) !important;
+    background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 100%) !important;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .shake {
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .pop-in {
+    animation: popIn 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  /* 커스텀 스크롤바 */
+  .main-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .main-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- 상단 헤더 -->
+  <header class="bg-gradient-to-r from-red-600 to-rose-700 text-white px-4 py-3 flex justify-between items-center shadow-md z-10">
+    <div>
+      <h1 class="font-jua text-xl tracking-wide drop-shadow">⚡ 포켓몬 구구단 마스터</h1>
+      <span id="leagueBadge" class="inline-block bg-yellow-300 text-slate-900 font-black text-[11px] px-2.5 py-0.5 rounded-full mt-0.5">
+        WORLD 1 · 관동/가라르 리그 (1~9단)
+      </span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <button id="bgmToggleBtn" onclick="toggleBgm()" class="bg-white/20 hover:bg-white/30 active:scale-95 border border-white/35 text-white rounded-xl px-2.5 py-1.5 text-xs font-bold transition">
+        🔊 BGM
+      </button>
+      <button onclick="openSettingsModal()" class="bg-white/20 hover:bg-white/30 active:scale-95 border border-white/35 text-white rounded-xl px-2.5 py-1.5 text-xs font-bold transition" title="리그 전환 및 설정">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- 상황별 4종 BGM 미리듣기 & 즉각 단음 테스트 바 -->
+  <div class="bg-slate-900 text-white px-3 py-2 flex flex-wrap items-center justify-between gap-1.5 text-xs border-b border-slate-700">
+    <div class="flex items-center gap-1 flex-wrap">
+      <span class="text-slate-300 font-bold mr-0.5">🎵 BGM:</span>
+      <button id="chip-adventure" onclick="previewBgm('adventure')" class="bgm-chip bg-yellow-400 text-slate-950 font-bold px-2 py-0.5 rounded-lg text-[11px] transition">1.모험</button>
+      <button id="chip-battle" onclick="previewBgm('battle')" class="bgm-chip bg-slate-700 text-slate-200 font-bold px-2 py-0.5 rounded-lg text-[11px] transition">2.배틀</button>
+      <button id="chip-legend" onclick="previewBgm('legend')" class="bgm-chip bg-slate-700 text-slate-200 font-bold px-2 py-0.5 rounded-lg text-[11px] transition">3.전설</button>
+      <button id="chip-town" onclick="previewBgm('town')" class="bgm-chip bg-slate-700 text-slate-200 font-bold px-2 py-0.5 rounded-lg text-[11px] transition">4.도감</button>
+    </div>
+    <div class="flex items-center gap-1">
+      <button onclick="playSfx('correct')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-0.5 rounded-md text-[11px] font-bold">🔔정답</button>
+      <button onclick="playSfx('wrong')" class="bg-rose-700 hover:bg-rose-600 text-white px-2 py-0.5 rounded-md text-[11px] font-bold">💥오답</button>
+    </div>
+  </div>
+
+  <!-- 3대 모드 탭 네비게이션 -->
+  <nav class="flex bg-white border-b-2 border-slate-200 px-2 pt-1.5 gap-1.5">
+    <button id="tab-capture" onclick="switchTab('capture')" class="nav-tab flex-1 py-2.5 px-1 font-jua text-sm rounded-t-xl bg-indigo-600 text-white shadow transition">
+      🔴 1. 포켓몬 포획
+    </button>
+    <button id="tab-evolve" onclick="switchTab('evolve')" class="nav-tab flex-1 py-2.5 px-1 font-jua text-sm rounded-t-xl bg-slate-100 text-slate-600 transition">
+      ⚡ 2. 거다이맥스 진화
+    </button>
+    <button id="tab-dex" onclick="switchTab('dex')" class="nav-tab flex-1 py-2.5 px-1 font-jua text-sm rounded-t-xl bg-slate-100 text-slate-600 transition">
+      📖 내 도감 (<span id="dexCount">0/28</span>)
+    </button>
+  </nav>
+
+  <!-- 메인 게임 영역 -->
+  <main class="main-scroll flex-1 overflow-y-auto p-3.5 flex flex-col">
+
+    <!-- 1. 포켓몬 포획 화면 -->
+    <section id="screen-capture" class="screen flex flex-col flex-1">
+      <div class="flex justify-between items-center bg-white px-3.5 py-2 rounded-2xl shadow-sm mb-2.5 text-xs font-bold">
+        <span id="captureDanTitle" class="text-slate-800 text-sm">현재 도전: 1단</span>
+        <span class="bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full">
+          🛡️ 기력의 조각: <span id="shieldCount1">0</span>개
+        </span>
+      </div>
+
+      <!-- 단 선택 그리드 -->
+      <div id="danGrid" class="grid grid-cols-3 gap-1.5 mb-2.5 max-h-36 overflow-y-auto pr-0.5"></div>
+
+      <!-- 배틀 카드 -->
+      <div id="captureCard" class="bg-white rounded-3xl p-4 shadow-md border-2 border-slate-200 text-center mb-3 relative">
+        <span id="captureHintBadge" class="inline-block px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-700 mb-1">
+          1단 퍼펙트 클리어 시 포획!
+        </span>
+        <div class="h-28 flex justify-center items-center my-1">
+          <img id="capturePokeImg" class="poke-img silhouette" src="" alt="야생 포켓몬 실루엣">
+        </div>
+        <div id="capturePokeName" class="font-jua text-lg text-slate-800 mb-1.5">??? (야생 포켓몬 출현!)</div>
+
+        <div class="bg-slate-200 h-3 rounded-full overflow-hidden mb-1">
+          <div id="captureProgressFill" class="h-full bg-gradient-to-r from-emerald-400 to-green-600 transition-all duration-200" style="width: 0%;"></div>
+        </div>
+        <div class="flex justify-between text-[11px] font-bold text-slate-500">
+          <span>진행도 (틀리면 1번부터 다시!)</span>
+          <span id="captureProgressText">0 / 9 문제</span>
+        </div>
+
+        <div class="bg-slate-900 text-white rounded-2xl py-3 px-2 mt-2.5 mb-1 font-jua text-3xl tracking-wider flex justify-center items-center gap-2.5 shadow-inner">
+          <span id="capNumA">1</span> × <span id="capNumB">1</span> =
+          <span id="capAnswerSlot" class="min-w-[76px] h-12 bg-slate-800 border-2 border-dashed border-yellow-300 rounded-xl text-yellow-300 inline-flex justify-center items-center px-2">?</span>
+        </div>
+        <div id="captureFeedback" class="min-h-[20px] text-xs font-extrabold mt-1"></div>
+      </div>
+
+      <!-- 터치 키패드 -->
+      <div class="grid grid-cols-3 gap-2 mt-auto">
+        <button onclick="pressDigit(1)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">1</button>
+        <button onclick="pressDigit(2)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">2</button>
+        <button onclick="pressDigit(3)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">3</button>
+        <button onclick="pressDigit(4)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">4</button>
+        <button onclick="pressDigit(5)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">5</button>
+        <button onclick="pressDigit(6)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">6</button>
+        <button onclick="pressDigit(7)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">7</button>
+        <button onclick="pressDigit(8)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">8</button>
+        <button onclick="pressDigit(9)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">9</button>
+        <button onclick="clearDigit()" class="bg-rose-100 border border-rose-300 border-b-4 rounded-2xl py-3 font-jua text-lg text-rose-800 active:translate-y-0.5">지우기</button>
+        <button onclick="pressDigit(0)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">0</button>
+        <button onclick="submitAnswer()" class="bg-indigo-600 border border-indigo-800 border-b-4 rounded-2xl py-3 font-jua text-xl text-white active:translate-y-0.5">확인!</button>
+      </div>
+    </section>
+
+    <!-- 2. 거다이맥스 진화 화면 (5초 제한시간 포함) -->
+    <section id="screen-evolve" class="screen hidden flex-col flex-1">
+      <!-- 파트너 선택 뷰 ("누구를 진화시킬까요?") -->
+      <div id="partnerSelectView">
+        <div class="flex justify-between items-center bg-white px-3.5 py-2 rounded-2xl shadow-sm mb-2 text-xs font-bold">
+          <span class="text-slate-800 text-sm">⚡ 누구를 진화시킬까요?</span>
+          <span class="bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full">
+            🛡️ 실드: <span id="shieldCount2">0</span>개
+          </span>
+        </div>
+        <p class="text-xs text-slate-600 font-bold mb-2.5 px-1">
+          파트너를 선택하세요! (제한시간 5초! 5연속 1차 → 10연속 2차 → 20연속 거다이맥스!)
+        </p>
+        <div id="partnerSelectGrid" class="space-y-4"></div>
+      </div>
+
+      <!-- 파트너 진화 배틀 뷰 -->
+      <div id="evolveBattleView" class="hidden flex-col flex-1">
+        <div class="flex justify-between items-center bg-white px-3 py-2 rounded-2xl shadow-sm mb-2 text-xs font-bold">
+          <button onclick="changePartner()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl px-2.5 py-1 font-bold">
+            🔄 다른 포켓몬 선택
+          </button>
+          <span class="bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full">
+            🛡️ 실드: <span id="shieldCount3">0</span>개
+          </span>
+        </div>
+
+        <div id="evolveCard" class="bg-white rounded-3xl p-3.5 shadow-md border-2 border-slate-200 text-center mb-2.5 relative">
+          <span id="evolveStageBadge" class="inline-block px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 mb-1">
+            기본형
+          </span>
+          <div class="h-28 flex justify-center items-center my-0.5">
+            <img id="evolvePokeImg" class="poke-img" src="" alt="파트너 포켓몬">
+          </div>
+          <div id="evolvePokeName" class="font-jua text-xl text-slate-800 mb-1">이상해씨</div>
+
+          <!-- 진화 콤보 게이지 -->
+          <div class="bg-slate-200 h-2.5 rounded-full overflow-hidden mb-1">
+            <div id="evolveProgressFill" class="h-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 transition-all duration-200" style="width: 0%;"></div>
+          </div>
+          <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-2">
+            <span id="nextEvoHint">다음 목표: 5연속 1단계 진화</span>
+            <span id="evolveComboText">0 / 20 콤보</span>
+          </div>
+
+          <!-- 5초 제한시간 실시간 카운트다운 게이지 -->
+          <div class="bg-slate-100 border border-slate-200 rounded-xl p-1.5 mb-2">
+            <div class="flex justify-between items-center text-[11px] font-extrabold mb-1 px-1">
+              <span class="text-slate-600">⏱️ 제한시간 (5초 안에 공격!)</span>
+              <span id="evoTimerText" class="text-emerald-600 font-black">5.0초</span>
+            </div>
+            <div class="bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div id="evoTimerFill" class="h-full bg-emerald-500 transition-none" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 text-white rounded-2xl py-2.5 px-2 mb-1 font-jua text-3xl tracking-wider flex justify-center items-center gap-2.5 shadow-inner">
+            <span id="evoNumA">3</span> × <span id="evoNumB">7</span> =
+            <span id="evoAnswerSlot" class="min-w-[76px] h-11 bg-slate-800 border-2 border-dashed border-yellow-300 rounded-xl text-yellow-300 inline-flex justify-center items-center px-2">?</span>
+          </div>
+          <div id="evolveFeedback" class="min-h-[20px] text-xs font-extrabold mt-1"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mt-auto">
+          <button onclick="pressDigit(1)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">1</button>
+          <button onclick="pressDigit(2)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">2</button>
+          <button onclick="pressDigit(3)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">3</button>
+          <button onclick="pressDigit(4)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">4</button>
+          <button onclick="pressDigit(5)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">5</button>
+          <button onclick="pressDigit(6)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">6</button>
+          <button onclick="pressDigit(7)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">7</button>
+          <button onclick="pressDigit(8)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">8</button>
+          <button onclick="pressDigit(9)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">9</button>
+          <button onclick="clearDigit()" class="bg-rose-100 border border-rose-300 border-b-4 rounded-2xl py-3 font-jua text-lg text-rose-800 active:translate-y-0.5">지우기</button>
+          <button onclick="pressDigit(0)" class="bg-white border border-slate-300 border-b-4 rounded-2xl py-3 font-jua text-2xl text-slate-800 active:translate-y-0.5">0</button>
+          <button onclick="submitAnswer()" class="bg-indigo-600 border border-indigo-800 border-b-4 rounded-2xl py-3 font-jua text-xl text-white active:translate-y-0.5">공격!</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 통합 도감 화면 (World 1 + World 2 전체 28종) -->
+    <section id="screen-dex" class="screen hidden flex-col flex-1">
+      <div class="flex justify-between items-center bg-white px-3.5 py-2 rounded-2xl shadow-sm mb-3 text-xs font-bold">
+        <span class="text-slate-800 text-sm">📖 통합 포켓몬 도감 (전체 28종)</span>
+        <span id="dexSummaryText" class="text-indigo-700 font-extrabold">포획 0 / 거다이맥스 0</span>
+      </div>
+      <div id="pokedexGrid" class="space-y-4 pb-4"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 통합 모달 팝업 -->
+<div id="modalBackdrop" class="fixed inset-0 bg-black/70 hidden justify-center items-center z-50 p-4">
+  <div id="modalBox" class="bg-white w-full max-w-sm rounded-3xl p-5 text-center shadow-2xl pop-in">
+    <h2 id="modalTitle" class="font-jua text-2xl text-slate-900 mb-2">알림</h2>
+    <div id="modalBody" class="text-sm text-slate-700"></div>
+    <div id="modalActions" class="flex gap-2.5 mt-4"></div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 1. 포켓몬 데이터 (World 1: 9종 + World 2: 신규 19종, 실제 이름·공식 일러스트 1:1 매칭)
+// ==========================================
+const ART = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+const FALLBACK_BALL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+
+const WORLD1_POKEMON = [
+  { id: 'w1_1', world: 1, dan: 1, stages: [
+    { name: "이상해씨", img: ART(1) },
+    { name: "이상해풀", img: ART(2) },
+    { name: "이상해꽃", img: ART(3) },
+    { name: "거다이맥스 이상해꽃", img: ART(10195) }
+  ]},
+  { id: 'w1_2', world: 1, dan: 2, stages: [
+    { name: "파이리", img: ART(4) },
+    { name: "리자드", img: ART(5) },
+    { name: "리자몽", img: ART(6) },
+    { name: "거다이맥스 리자몽", img: ART(10196) }
+  ]},
+  { id: 'w1_3', world: 1, dan: 3, stages: [
+    { name: "꼬부기", img: ART(7) },
+    { name: "어니부기", img: ART(8) },
+    { name: "거북왕", img: ART(9) },
+    { name: "거다이맥스 거북왕", img: ART(10197) }
+  ]},
+  { id: 'w1_4', world: 1, dan: 4, stages: [
+    { name: "피츄", img: ART(172) },
+    { name: "피카츄", img: ART(25) },
+    { name: "라이츄", img: ART(26) },
+    { name: "거다이맥스 피카츄", img: ART(10199) }
+  ]},
+  { id: 'w1_5', world: 1, dan: 5, stages: [
+    { name: "나옹", img: ART(52) },
+    { name: "페르시온", img: ART(53) },
+    { name: "나이킹", img: ART(863) },
+    { name: "거다이맥스 나옹", img: ART(10200) }
+  ]},
+  { id: 'w1_6', world: 1, dan: 6, stages: [
+    { name: "고오스", img: ART(92) },
+    { name: "고우스트", img: ART(93) },
+    { name: "팬텀", img: ART(94) },
+    { name: "거다이맥스 팬텀", img: ART(10202) }
+  ]},
+  { id: 'w1_7', world: 1, dan: 7, stages: [
+    { name: "이브이", img: ART(133) },
+    { name: "에브이", img: ART(196) },
+    { name: "블래키", img: ART(197) },
+    { name: "거다이맥스 이브이", img: ART(10205) }
+  ]},
+  { id: 'w1_8', world: 1, dan: 8, stages: [
+    { name: "먹고자", img: ART(446) },
+    { name: "잠만보", img: ART(143) },
+    { name: "우두머리 잠만보", img: ART(143) },
+    { name: "거다이맥스 잠만보", img: ART(10206) }
+  ]},
+  { id: 'w1_9', world: 1, dan: 9, stages: [
+    { name: "두랄루돈", img: ART(884) },
+    { name: "브리두라스", img: ART(1018) },
+    { name: "합금 브리두라스", img: ART(1018) },
+    { name: "거다이맥스 두랄루돈", img: ART(10225) }
+  ]}
+];
+
+const WORLD2_POKEMON = [
+  { id: 'w2_1', world: 2, dan: 1, stages: [
+    { name: "흥나숭", img: ART(810) },
+    { name: "채키몽", img: ART(811) },
+    { name: "고릴타", img: ART(812) },
+    { name: "거다이맥스 고릴타", img: ART(10209) }
+  ]},
+  { id: 'w2_2', world: 2, dan: 2, stages: [
+    { name: "염버니", img: ART(813) },
+    { name: "래비풋", img: ART(814) },
+    { name: "에이스번", img: ART(815) },
+    { name: "거다이맥스 에이스번", img: ART(10210) }
+  ]},
+  { id: 'w2_3', world: 2, dan: 3, stages: [
+    { name: "울머기", img: ART(816) },
+    { name: "누겔레온", img: ART(817) },
+    { name: "인텔리레온", img: ART(818) },
+    { name: "거다이맥스 인텔리레온", img: ART(10211) }
+  ]},
+  { id: 'w2_4', world: 2, dan: 4, stages: [
+    { name: "리오르", img: ART(447) },
+    { name: "루카리오", img: ART(448) },
+    { name: "파동 루카리오", img: ART(448) },
+    { name: "메가루카리오", img: ART(10059) }
+  ]},
+  { id: 'w2_5', world: 2, dan: 5, stages: [
+    { name: "해골몽", img: ART(355) },
+    { name: "미라몽", img: ART(356) },
+    { name: "야느와르몽", img: ART(477) },
+    { name: "암흑 야느와르몽", img: ART(477) }
+  ]},
+  { id: 'w2_6', world: 2, dan: 6, stages: [
+    { name: "일레즌", img: ART(848) },
+    { name: "스트린더", img: ART(849) },
+    { name: "스트린더(로우)", img: ART(10184) },
+    { name: "거다이맥스 스트린더", img: ART(10219) }
+  ]},
+  { id: 'w2_7', world: 2, dan: 7, stages: [
+    { name: "마빌크", img: ART(868) },
+    { name: "마휘핑", img: ART(869) },
+    { name: "크림 마휘핑", img: ART(869) },
+    { name: "거다이맥스 마휘핑", img: ART(10223) }
+  ]},
+  { id: 'w2_8', world: 2, dan: 8, stages: [
+    { name: "몸지브림", img: ART(856) },
+    { name: "손지브림", img: ART(857) },
+    { name: "브리무음", img: ART(858) },
+    { name: "거다이맥스 브리무음", img: ART(10221) }
+  ]},
+  { id: 'w2_9', world: 2, dan: 9, stages: [
+    { name: "메롱꿍", img: ART(859) },
+    { name: "쏘겨모", img: ART(860) },
+    { name: "오롱털", img: ART(861) },
+    { name: "거다이맥스 오롱털", img: ART(10222) }
+  ]},
+  { id: 'w2_10', world: 2, dan: 10, stages: [
+    { name: "태우지네", img: ART(850) },
+    { name: "다태우지네", img: ART(851) },
+    { name: "불꽃 다태우지네", img: ART(851) },
+    { name: "거다이맥스 다태우지네", img: ART(10220) }
+  ]},
+  { id: 'w2_11', world: 2, dan: 11, stages: [
+    { name: "아차모", img: ART(255) },
+    { name: "영치코", img: ART(256) },
+    { name: "번치코", img: ART(257) },
+    { name: "메가번치코", img: ART(10050) }
+  ]},
+  { id: 'w2_12', world: 2, dan: 12, stages: [
+    { name: "물짱이", img: ART(258) },
+    { name: "늪짱이", img: ART(259) },
+    { name: "대짱이", img: ART(260) },
+    { name: "메가대짱이", img: ART(10064) }
+  ]},
+  { id: 'w2_13', world: 2, dan: 13, stages: [
+    { name: "딥상어동", img: ART(443) },
+    { name: "한바이트", img: ART(444) },
+    { name: "한카리아스", img: ART(445) },
+    { name: "메가한카리아스", img: ART(10058) }
+  ]},
+  { id: 'w2_14', world: 2, dan: 14, stages: [
+    { name: "애버라스", img: ART(246) },
+    { name: "데기라스", img: ART(247) },
+    { name: "마기라스", img: ART(248) },
+    { name: "메가마기라스", img: ART(10049) }
+  ]},
+  { id: 'w2_15', world: 2, dan: 15, stages: [
+    { name: "루기아", img: ART(249) },
+    { name: "칠색조", img: ART(250) },
+    { name: "디아루가", img: ART(483) },
+    { name: "오리진 디아루가", img: ART(10245) }
+  ]},
+  { id: 'w2_16', world: 2, dan: 16, stages: [
+    { name: "펄기아", img: ART(484) },
+    { name: "기라티나", img: ART(487) },
+    { name: "오리진 기라티나", img: ART(10007) },
+    { name: "창조신 아르세우스", img: ART(493) }
+  ]},
+  { id: 'w2_17', world: 2, dan: 17, stages: [
+    { name: "라티아스", img: ART(380) },
+    { name: "라티오스", img: ART(381) },
+    { name: "레쿠쟈", img: ART(384) },
+    { name: "메가레쿠쟈", img: ART(10079) }
+  ]},
+  { id: 'w2_18', world: 2, dan: 18, stages: [
+    { name: "뮤", img: ART(151) },
+    { name: "뮤츠", img: ART(150) },
+    { name: "메가뮤츠Y", img: ART(10044) },
+    { name: "메가뮤츠X", img: ART(10043) }
+  ]},
+  { id: 'w2_19', world: 2, dan: 19, stages: [
+    { name: "자마젠타", img: ART(889) },
+    { name: "자시안", img: ART(888) },
+    { name: "검왕 자시안", img: ART(10188) },
+    { name: "무한다이맥스 무한다이노", img: ART(10190) }
+  ]}
+];
+
+const ALL_POKEMON_MASTER = [...WORLD1_POKEMON, ...WORLD2_POKEMON];
+
+// ==========================================
+// 2. 다이나믹 WAV 오디오 합성 엔진 (4종 자동 BGM + 즉각 단음 효과음)
+// ==========================================
+const SoundEngine = (() => {
+  const sampleRate = 22050;
+  let bgmEnabled = true;
+  let currentTrack = 'adventure';
+  const bgmAudio = new Audio();
+  bgmAudio.loop = true;
+  bgmAudio.volume = 0.28;
+
+  const sfxCache = {};
+  const bgmCache = {};
+
+  function encodeWAV(samples) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+  }
+
+  function synthMelody(notes, bpm, waveType = 'square') {
+    const beatSec = 60 / bpm;
+    let totalSamples = 0;
+    notes.forEach(n => totalSamples += Math.floor(n[1] * beatSec * sampleRate));
+    const samples = new Float32Array(totalSamples);
+    let cursor = 0;
+
+    notes.forEach(([freq, beats]) => {
+      const len = Math.floor(beats * beatSec * sampleRate);
+      for (let i = 0; i < len; i++) {
+        if (freq > 0) {
+          const t = i / sampleRate;
+          const env = Math.min(1, i / 120) * Math.max(0.15, 1 - (i / len) * 0.65);
+          let val = 0;
+          if (waveType === 'square') {
+            val = Math.sin(2 * Math.PI * freq * t) >= 0 ? 0.5 : -0.5;
+          } else if (waveType === 'triangle') {
+            val = 2 * Math.abs(2 * (t * freq - Math.floor(t * freq + 0.5))) - 1;
+          } else {
+            val = Math.sin(2 * Math.PI * freq * t);
+          }
+          samples[cursor + i] = val * env * 0.45;
+        }
+      }
+      cursor += len;
+    });
+    return encodeWAV(samples);
+  }
+
+  function buildTracks() {
+    // 1. 모험 (134 BPM - 경쾌한 8비트 모험 테마)
+    bgmCache.adventure = synthMelody([
+      [523.25,0.5],[659.25,0.5],[783.99,0.5],[1046.5,0.5],
+      [880.00,0.5],[783.99,0.5],[659.25,1.0],
+      [587.33,0.5],[698.46,0.5],[880.00,0.5],[987.77,0.5],
+      [783.99,1.0],[0,0.5],[783.99,0.5],
+      [659.25,0.5],[783.99,0.5],[880.00,0.5],[1046.5,0.5],
+      [987.77,0.5],[880.00,0.5],[783.99,1.0],
+      [698.46,0.5],[659.25,0.5],[587.33,0.5],[493.88,0.5],
+      [523.25,1.5],[0,0.5]
+    ], 134, 'square');
+
+    // 2. 배틀 (156 BPM - 긴장감 넘치는 체육관/거다이맥스 배틀 테마)
+    bgmCache.battle = synthMelody([
+      [329.63,0.25],[329.63,0.25],[493.88,0.5],[329.63,0.25],[329.63,0.25],[523.25,0.5],
+      [329.63,0.25],[329.63,0.25],[587.33,0.5],[523.25,0.5],[493.88,0.5],
+      [293.66,0.25],[293.66,0.25],[440.00,0.5],[293.66,0.25],[293.66,0.25],[493.88,0.5],
+      [523.25,0.5],[493.88,0.5],[440.00,0.5],[392.00,0.5],
+      [659.25,0.5],[587.33,0.25],[523.25,0.25],[493.88,0.5],[523.25,0.5],
+      [587.33,0.5],[659.25,0.5],[783.99,1.0]
+    ], 156, 'square');
+
+    // 3. 전설 (162 BPM - World 2 19단 마스터 리그 테마)
+    bgmCache.legend = synthMelody([
+      [440.00,0.5],[440.00,0.25],[523.25,0.25],[659.25,0.5],[880.00,0.5],
+      [783.99,0.5],[659.25,0.5],[587.33,1.0],
+      [698.46,0.5],[698.46,0.25],[880.00,0.25],[1046.5,0.5],[987.77,0.5],
+      [880.00,0.5],[783.99,0.5],[659.25,1.0],
+      [587.33,0.25],[659.25,0.25],[698.46,0.25],[783.99,0.25],[880.00,0.5],[987.77,0.5],
+      [1046.5,1.5],[0,0.5]
+    ], 162, 'square');
+
+    // 4. 도감/마을 (114 BPM - 아늑한 도감/파트너 선택 테마)
+    bgmCache.town = synthMelody([
+      [523.25,1.0],[659.25,0.5],[783.99,0.5],[659.25,1.0],[587.33,1.0],
+      [493.88,1.0],[587.33,0.5],[698.46,0.5],[587.33,1.0],[523.25,1.0],
+      [440.00,1.0],[523.25,0.5],[659.25,0.5],[587.33,1.0],[493.88,1.0],
+      [523.25,1.5],[0,0.5]
+    ], 114, 'triangle');
+
+    // 즉각 단음 효과음: 정답 (0.09초 C6)
+    sfxCache.correct = synthMelody([[1046.5, 0.25]], 166, 'sine');
+    // 즉각 단음 효과음: 오답 (0.14초 F#2)
+    sfxCache.wrong = synthMelody([[92.50, 0.35]], 150, 'square');
+    // 포획/진화 팡파르
+    sfxCache.fanfare = synthMelody([
+      [523.25,0.2],[659.25,0.2],[783.99,0.2],[1046.5,0.5]
+    ], 150, 'square');
+  }
+
+  buildTracks();
+
+  function setTrack(trackName, forcePlay = false) {
+    if (!bgmCache[trackName]) return;
+    const changed = currentTrack !== trackName || !bgmAudio.src;
+    currentTrack = trackName;
+
+    document.querySelectorAll('.bgm-chip').forEach(c => {
+      c.className = 'bgm-chip bg-slate-700 text-slate-200 font-bold px-2 py-0.5 rounded-lg text-[11px] transition';
+    });
+    const activeChip = document.getElementById(`chip-${trackName}`);
+    if (activeChip) {
+      activeChip.className = 'bgm-chip bg-yellow-400 text-slate-950 font-bold px-2 py-0.5 rounded-lg text-[11px] transition';
+    }
+
+    if (changed) {
+      bgmAudio.src = bgmCache[trackName];
+    }
+    if (bgmEnabled || forcePlay) {
+      bgmEnabled = true;
+      updateToggleBtn();
+      bgmAudio.play().catch(() => {});
+    }
+  }
+
+  function ensurePlaying() {
+    if (!bgmAudio.src) {
+      bgmAudio.src = bgmCache[currentTrack];
+    }
+    if (bgmEnabled && bgmAudio.paused) {
+      bgmAudio.play().catch(() => {});
+    }
+  }
+
+  function toggle() {
+    bgmEnabled = !bgmEnabled;
+    if (bgmEnabled) {
+      if (!bgmAudio.src) bgmAudio.src = bgmCache[currentTrack];
+      bgmAudio.play().catch(() => {});
+    } else {
+      bgmAudio.pause();
+    }
+    updateToggleBtn();
+  }
+
+  function updateToggleBtn() {
+    const btn = document.getElementById('bgmToggleBtn');
+    if (btn) btn.textContent = bgmEnabled ? '🔊 BGM' : '🔇 음소거';
+  }
+
+  function playSfx(name) {
+    if (!sfxCache[name]) return;
+    const a = new Audio(sfxCache[name]);
+    a.volume = name === 'wrong' ? 0.35 : 0.48;
+    a.play().catch(() => {});
+  }
+
+  return { setTrack, ensurePlaying, toggle, playSfx };
+})();
+
+function toggleBgm() { SoundEngine.toggle(); }
+function previewBgm(track) { SoundEngine.setTrack(track, true); }
+function playSfx(name) { SoundEngine.playSfx(name); }
+
+// ==========================================
+// 3. 통합 도감 상태 관리 및 영구 저장 (총 28종 보존)
+// ==========================================
+const STORAGE_KEY = 'poke_gugudan_unified_v5';
+
+function createUnifiedPokedex() {
+  return ALL_POKEMON_MASTER.map(item => ({
+    id: item.id,
+    world: item.world,
+    dan: item.dan,
+    captured: false,
+    ballType: null,
+    stage: 0,
+    currentCombo: 0,
+    stages: item.stages
+  }));
+}
+
+let state = {
+  world: 1,
+  activeTab: 'capture',
+  currentDan: 1,
+  captureStep: 1,
+  shieldCount: 0,
+  activePartnerId: null,
+  pokedex: createUnifiedPokedex()
+};
+
+let currentInput = "";
+let evoQuestion = { a: 2, b: 3 };
+
+// ==========================================
+// 4. 2단계 진화 배틀 5초 제한시간 타이머 관리
+// ==========================================
+const EVO_TIME_LIMIT_MS = 5000;
+let evoTimerInterval = null;
+let evoDeadline = 0;
+
+function stopEvoTimer() {
+  if (evoTimerInterval) {
+    clearInterval(evoTimerInterval);
+    evoTimerInterval = null;
+  }
+}
+
+function startEvoTimer() {
+  stopEvoTimer();
+  if (state.activeTab !== 'evolve' || !state.activePartnerId) return;
+  if (!document.getElementById('modalBackdrop').classList.contains('hidden')) return;
+
+  evoDeadline = Date.now() + EVO_TIME_LIMIT_MS;
+  updateEvoTimerUI(EVO_TIME_LIMIT_MS);
+
+  evoTimerInterval = setInterval(() => {
+    // 모달이 열려 있거나 다른 탭으로 이동했다면 즉시 정지
+    if (
+      state.activeTab !== 'evolve' ||
+      !state.activePartnerId ||
+      !document.getElementById('modalBackdrop').classList.contains('hidden')
+    ) {
+      stopEvoTimer();
+      return;
+    }
+
+    const remaining = Math.max(0, evoDeadline - Date.now());
+    updateEvoTimerUI(remaining);
+
+    if (remaining <= 0) {
+      stopEvoTimer();
+      handleEvolveTimeout();
+    }
+  }, 50);
+}
+
+function updateEvoTimerUI(remainingMs) {
+  const sec = (remainingMs / 1000).toFixed(1);
+  const pct = Math.max(0, Math.min(100, (remainingMs / EVO_TIME_LIMIT_MS) * 100));
+
+  const textEl = document.getElementById('evoTimerText');
+  const fillEl = document.getElementById('evoTimerFill');
+  if (!textEl || !fillEl) return;
+
+  textEl.textContent = `${sec}초`;
+  fillEl.style.width = `${pct}%`;
+
+  if (remainingMs <= 1500) {
+    textEl.className = 'text-rose-600 font-black animate-pulse';
+    fillEl.className = 'h-full bg-rose-500 transition-none';
+  } else if (remainingMs <= 3000) {
+    textEl.className = 'text-amber-600 font-black';
+    fillEl.className = 'h-full bg-amber-400 transition-none';
+  } else {
+    textEl.className = 'text-emerald-600 font-black';
+    fillEl.className = 'h-full bg-emerald-500 transition-none';
+  }
+}
+
+function handleEvolveTimeout() {
+  const partner = state.pokedex.find(p => p.id === state.activePartnerId);
+  if (!partner) return;
+
+  const expected = evoQuestion.a * evoQuestion.b;
+  const fb = document.getElementById('evolveFeedback');
+  const card = document.getElementById('evolveCard');
+
+  currentInput = "";
+  playSfx('wrong');
+  card.classList.remove('shake');
+  void card.offsetWidth;
+  card.classList.add('shake');
+  fb.className = 'min-h-[20px] text-xs font-extrabold mt-1 text-rose-600';
+
+  if (state.shieldCount > 0) {
+    state.shieldCount -= 1;
+    fb.textContent = `⏰ 시간 초과! 🛡️ 기력의 조각 1개 소모하여 ${partner.currentCombo}콤보 유지! (정답 ${expected})`;
+  } else {
+    const checkpoint = partner.currentCombo >= 10 ? 10 : (partner.currentCombo >= 5 ? 5 : 0);
+    partner.currentCombo = checkpoint;
+    fb.textContent = `⏰ 시간 초과! (정답 ${expected}) 체크포인트(${checkpoint}콤보)에서 다시 시작!`;
+  }
+
+  generateEvoQuestion();
+  saveState();
+  renderAll();
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.pokedex)) {
+        const fresh = createUnifiedPokedex();
+        const merged = fresh.map(baseItem => {
+          const savedItem = parsed.pokedex.find(s => s.id === baseItem.id);
+          return savedItem ? { ...baseItem, ...savedItem, stages: baseItem.stages } : baseItem;
+        });
+        state = { ...state, ...parsed, pokedex: merged };
+      }
+    }
+  } catch (e) {}
+}
+
+// ==========================================
+// 5. 화면 렌더링 및 게임 진행 로직
+// ==========================================
+function getMaxDan() {
+  return state.world === 1 ? 9 : 19;
+}
+
+function getWorldPokedex(worldNum) {
+  return state.pokedex.filter(p => p.world === worldNum);
+}
+
+function updateDynamicBgm() {
+  if (state.activeTab === 'dex') {
+    SoundEngine.setTrack('town');
+  } else if (state.activeTab === 'evolve') {
+    if (!state.activePartnerId) {
+      SoundEngine.setTrack('town');
+    } else {
+      SoundEngine.setTrack(state.world === 2 ? 'legend' : 'battle');
+    }
+  } else {
+    SoundEngine.setTrack(state.world === 2 ? 'legend' : 'adventure');
+  }
+}
+
+function switchTab(tab) {
+  SoundEngine.ensurePlaying();
+  stopEvoTimer();
+  state.activeTab = tab;
+  currentInput = "";
+
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.className = 'nav-tab flex-1 py-2.5 px-1 font-jua text-sm rounded-t-xl bg-slate-100 text-slate-600 transition';
+  });
+  const activeTabBtn = document.getElementById(`tab-${tab}`);
+  if (activeTabBtn) {
+    activeTabBtn.className = 'nav-tab flex-1 py-2.5 px-1 font-jua text-sm rounded-t-xl bg-indigo-600 text-white shadow transition';
+  }
+
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.add('hidden');
+    s.classList.remove('flex');
+  });
+  const activeScreen = document.getElementById(`screen-${tab}`);
+  if (activeScreen) {
+    activeScreen.classList.remove('hidden');
+    activeScreen.classList.add('flex');
+  }
+
+  updateDynamicBgm();
+  renderAll();
+}
+
+function renderAll() {
+  document.getElementById('leagueBadge').textContent =
+    state.world === 1 ? 'WORLD 1 · 관동/가라르 리그 (1~9단)' : 'WORLD 2 · 전설 마스터 리그 (1~19단)';
+
+  const totalCount = state.pokedex.length;
+  const capturedCount = state.pokedex.filter(p => p.captured).length;
+  const masteredCount = state.pokedex.filter(p => p.stage === 3).length;
+
+  document.getElementById('dexCount').textContent = `${capturedCount}/${totalCount}`;
+  document.getElementById('dexSummaryText').textContent = `포획 ${capturedCount}/${totalCount} · 거다이맥스 ${masteredCount}`;
+
+  ['shieldCount1', 'shieldCount2', 'shieldCount3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = state.shieldCount;
+  });
+
+  renderCaptureScreen();
+  renderEvolveScreen();
+  renderPokedexScreen();
+}
+
+function renderCaptureScreen() {
+  const maxDan = getMaxDan();
+  const worldList = getWorldPokedex(state.world);
+  const grid = document.getElementById('danGrid');
+  grid.innerHTML = '';
+
+  const highestCleared = worldList.reduce((max, p) => p.captured ? Math.max(max, p.dan) : max, 0);
+  const unlockedMax = Math.min(maxDan, highestCleared + 1);
+
+  worldList.forEach(p => {
+    const btn = document.createElement('button');
+    const isUnlocked = p.dan <= unlockedMax;
+    const isCurrent = p.dan === state.currentDan;
+
+    let styleCls = 'bg-white border-2 border-slate-300 text-slate-800';
+    if (p.captured) styleCls = 'bg-emerald-50 border-2 border-emerald-400 text-emerald-900';
+    if (isCurrent) styleCls += ' ring-2 ring-amber-400 bg-amber-50';
+    if (!isUnlocked) styleCls = 'bg-slate-200 border-2 border-slate-200 text-slate-400 cursor-not-allowed';
+
+    btn.className = `${styleCls} rounded-xl py-2 px-1 text-center font-jua text-sm transition`;
+    btn.innerHTML = `${p.dan}단 ${p.captured ? '✅' : (isUnlocked ? '🔥' : '🔒')}`;
+    if (isUnlocked) {
+      btn.onclick = () => {
+        SoundEngine.ensurePlaying();
+        state.currentDan = p.dan;
+        state.captureStep = 1;
+        currentInput = "";
+        document.getElementById('captureFeedback').textContent = '';
+        renderCaptureScreen();
+      };
+    }
+    grid.appendChild(btn);
+  });
+
+  const targetPoke = worldList.find(p => p.dan === state.currentDan) || worldList[0];
+  document.getElementById('captureDanTitle').textContent = `현재 도전: ${state.currentDan}단 (World ${state.world})`;
+  document.getElementById('captureHintBadge').textContent = targetPoke.captured
+    ? `포획 완료! (${targetPoke.ballType}) · 재도전 시 실드 +1`
+    : `${state.currentDan}단 ${maxDan}문제 퍼펙트 시 포획!`;
+
+  const imgEl = document.getElementById('capturePokeImg');
+  imgEl.src = targetPoke.stages[0].img;
+  imgEl.onerror = () => { imgEl.src = FALLBACK_BALL; };
+
+  if (targetPoke.captured) {
+    imgEl.classList.remove('silhouette');
+    document.getElementById('capturePokeName').textContent = targetPoke.stages[0].name;
+  } else {
+    imgEl.classList.add('silhouette');
+    document.getElementById('capturePokeName').textContent = `??? (안개 속 야생 포켓몬)`;
+  }
+
+  const pct = ((state.captureStep - 1) / maxDan) * 100;
+  document.getElementById('captureProgressFill').style.width = `${pct}%`;
+  document.getElementById('captureProgressText').textContent = `${state.captureStep - 1} / ${maxDan} 문제`;
+
+  document.getElementById('capNumA').textContent = state.currentDan;
+  document.getElementById('capNumB').textContent = state.captureStep;
+  document.getElementById('capAnswerSlot').textContent = currentInput || '?';
+}
+
+function renderEvolveScreen() {
+  const selectView = document.getElementById('partnerSelectView');
+  const battleView = document.getElementById('evolveBattleView');
+
+  const partner = state.pokedex.find(p => p.id === state.activePartnerId && p.captured && p.stage < 3);
+  if (!partner) {
+    stopEvoTimer();
+    state.activePartnerId = null;
+    selectView.classList.remove('hidden');
+    battleView.classList.add('hidden');
+    battleView.classList.remove('flex');
+    renderPartnerSelectGrid();
+  } else {
+    selectView.classList.add('hidden');
+    battleView.classList.remove('hidden');
+    battleView.classList.add('flex');
+    renderEvolveBattle(partner);
+    startEvoTimer();
+  }
+}
+
+function buildPokemonCard(p, mode) {
+  const card = document.createElement('div');
+  const stageInfo = p.stages[p.stage];
+
+  let borderCls = 'bg-slate-100 border-slate-200 opacity-80';
+  let subText = `W${p.world} · ${p.dan}단 해금`;
+
+  if (p.stage === 3) {
+    borderCls = 'bg-gradient-to-b from-amber-50 to-white border-amber-400 shadow-sm';
+    subText = '👑 거다이맥스 완료';
+  } else if (p.captured) {
+    borderCls = 'bg-white border-sky-300 shadow-sm';
+    subText = mode === 'select'
+      ? `진화 ${p.stage}단계 (${p.currentCombo}/20)`
+      : `${p.ballType} · ${p.currentCombo}/20`;
+  }
+
+  card.className = `${borderCls} border-2 rounded-2xl p-2 text-center cursor-pointer transition hover:-translate-y-0.5`;
+  card.innerHTML = `
+    <div class="text-[10px] font-extrabold text-slate-400 text-left">W${p.world}-${p.dan}단</div>
+    <img src="${stageInfo.img}" class="dex-thumb ${p.captured ? '' : 'silhouette'}" onerror="this.src='${FALLBACK_BALL}'">
+    <div class="font-jua text-xs text-slate-800 mt-1 truncate">${p.captured ? stageInfo.name : '???'}</div>
+    <div class="text-[10px] font-bold text-slate-500 mt-0.5">${subText}</div>
+  `;
+  return card;
+}
+
+function renderPartnerSelectGrid() {
+  const container = document.getElementById('partnerSelectGrid');
+  container.innerHTML = '';
+
+  [1, 2].forEach(wNum => {
+    const section = document.createElement('div');
+    const title = document.createElement('h3');
+    title.className = 'font-jua text-sm text-indigo-800 mb-1.5 flex items-center gap-1';
+    title.textContent = wNum === 1 ? '🌿 World 1 파트너 (1~9단)' : '🌌 World 2 전설 파트너 (1~19단)';
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-3 gap-2';
+
+    getWorldPokedex(wNum).forEach(p => {
+      const card = buildPokemonCard(p, 'select');
+      const stageInfo = p.stages[p.stage];
+
+      card.onclick = () => {
+        SoundEngine.ensurePlaying();
+        if (!p.captured) {
+          showModal('포획 필요!', `<p>아직 만나지 못한 포켓몬이에요.<br>먼저 <b>World ${p.world}</b>의 <b>${p.dan}단</b>을 클리어해 포획해 주세요!</p>`, [
+            { text: `World ${p.world} ${p.dan}단 포획하러 가기`, primary: true, action: () => {
+              closeModal();
+              state.world = p.world;
+              state.currentDan = p.dan;
+              state.captureStep = 1;
+              switchTab('capture');
+            }},
+            { text: '닫기', primary: false, action: closeModal }
+          ]);
+          return;
+        }
+        if (p.stage === 3) {
+          showModal('거다이맥스 마스터!', `<p><b>${stageInfo.name}</b>은(는) 이미 최고 단계인 거다이맥스 진화를 마쳤습니다! 👑</p>`, [
+            { text: '확인', primary: true, action: closeModal }
+          ]);
+          return;
+        }
+
+        showModal('파트너 선택 확인', `
+          <img src="${stageInfo.img}" class="w-28 h-28 object-contain mx-auto">
+          <p class="text-base font-bold my-2">
+            <span class="text-indigo-700">${stageInfo.name}</span>을(를) 진화시킬까요?
+          </p>
+          <p class="text-xs text-slate-500">제한시간 <b>5초</b>! 누적 ${p.currentCombo}콤보 · 목표 20연속 정답!</p>
+        `, [
+          { text: '네, 진화시킬래요! ⚡', primary: true, action: () => {
+            closeModal();
+            state.activePartnerId = p.id;
+            currentInput = "";
+            document.getElementById('evolveFeedback').textContent = '';
+            generateEvoQuestion();
+            saveState();
+            updateDynamicBgm();
+            renderEvolveScreen();
+          }},
+          { text: '다른 포켓몬 고르기', primary: false, action: closeModal }
+        ]);
+      };
+
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+function changePartner() {
+  SoundEngine.ensurePlaying();
+  stopEvoTimer();
+  state.activePartnerId = null;
+  currentInput = "";
+  saveState();
+  updateDynamicBgm();
+  renderEvolveScreen();
+}
+
+function generateEvoQuestion() {
+  const max = getMaxDan();
+  evoQuestion = {
+    a: Math.floor(Math.random() * max) + 1,
+    b: Math.floor(Math.random() * max) + 1
+  };
+}
+
+function renderEvolveBattle(partner) {
+  const stageInfo = partner.stages[partner.stage];
+  const stageNames = ['기본형 (0~4콤보)', '1단계 진화 (5~9콤보)', '2단계 최종 진화 (10~19콤보)', '👑 거다이맥스'];
+  document.getElementById('evolveStageBadge').textContent = `World ${partner.world} · ${stageNames[partner.stage]}`;
+
+  const card = document.getElementById('evolveCard');
+  if (partner.stage >= 2) card.classList.add('gmax-aura');
+  else card.classList.remove('gmax-aura');
+
+  const imgEl = document.getElementById('evolvePokeImg');
+  imgEl.src = stageInfo.img;
+  document.getElementById('evolvePokeName').textContent = stageInfo.name;
+
+  const pct = (partner.currentCombo / 20) * 100;
+  document.getElementById('evolveProgressFill').style.width = `${pct}%`;
+  document.getElementById('evolveComboText').textContent = `${partner.currentCombo} / 20 콤보`;
+
+  let nextGoal = '20연속 거다이맥스 각성!';
+  if (partner.currentCombo < 5) nextGoal = `5연속 달성 시 [${partner.stages[1].name}] 진화!`;
+  else if (partner.currentCombo < 10) nextGoal = `10연속 달성 시 [${partner.stages[2].name}] 진화!`;
+  else nextGoal = `20연속 달성 시 [${partner.stages[3].name}]!`;
+  document.getElementById('nextEvoHint').textContent = nextGoal;
+
+  document.getElementById('evoNumA').textContent = evoQuestion.a;
+  document.getElementById('evoNumB').textContent = evoQuestion.b;
+  document.getElementById('evoAnswerSlot').textContent = currentInput || '?';
+}
+
+function renderPokedexScreen() {
+  const container = document.getElementById('pokedexGrid');
+  container.innerHTML = '';
+
+  [1, 2].forEach(wNum => {
+    const list = getWorldPokedex(wNum);
+    const capCnt = list.filter(p => p.captured).length;
+
+    const section = document.createElement('div');
+    const title = document.createElement('h3');
+    title.className = 'font-jua text-sm text-slate-800 mb-1.5 flex justify-between items-center bg-white px-3 py-1.5 rounded-xl border border-slate-200';
+    title.innerHTML = `
+      <span>${wNum === 1 ? '🌿 World 1 · 관동/가라르 (1~9단)' : '🌌 World 2 · 전설 마스터 (1~19단)'}</span>
+      <span class="text-xs text-indigo-600">${capCnt} / ${list.length}</span>
+    `;
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-3 gap-2';
+
+    list.forEach(p => {
+      const card = buildPokemonCard(p, 'dex');
+      const stageInfo = p.stages[p.stage];
+
+      card.onclick = () => {
+        SoundEngine.ensurePlaying();
+        if (!p.captured) {
+          showModal(`World ${p.world} · ${p.dan}단 미포획`, `<p><b>World ${p.world}</b>의 <b>${p.dan}단</b>을 틀리지 않고 완주하면 포획할 수 있습니다!</p>`, [
+            { text: '도전하기', primary: true, action: () => {
+              closeModal();
+              state.world = p.world;
+              state.currentDan = p.dan;
+              state.captureStep = 1;
+              switchTab('capture');
+            }},
+            { text: '닫기', primary: false, action: closeModal }
+          ]);
+          return;
+        }
+
+        const chainHtml = p.stages.map((st, idx) => `
+          <div class="flex-1 text-center" style="opacity:${idx <= p.stage ? 1 : 0.25}">
+            <img src="${st.img}" class="w-14 h-14 object-contain mx-auto ${idx <= p.stage ? '' : 'silhouette'}">
+            <span class="block text-[10px] font-bold mt-1">${idx <= p.stage ? st.name : '???'}</span>
+          </div>
+        `).join('');
+
+        const actions = [];
+        if (p.stage < 3) {
+          actions.push({ text: '⚡ 이 포켓몬 진화시키러 가기', primary: true, action: () => {
+            closeModal();
+            state.activePartnerId = p.id;
+            generateEvoQuestion();
+            switchTab('evolve');
+          }});
+        }
+        actions.push({ text: '닫기', primary: p.stage === 3, action: closeModal });
+
+        showModal(`${stageInfo.name} (W${p.world}-${p.dan}단)`, `
+          <div class="text-xs text-slate-500 font-bold mb-2">포획 볼: ${p.ballType} · 누적 콤보: ${p.currentCombo}/20</div>
+          <div class="flex justify-around items-center bg-slate-50 rounded-2xl p-2.5 border border-slate-200">${chainHtml}</div>
+        `, actions);
+      };
+
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+// ==========================================
+// 6. 키패드/키보드 입력 및 정답 검증
+// ==========================================
+function pressDigit(d) {
+  SoundEngine.ensurePlaying();
+  if (currentInput.length >= 3) return;
+  currentInput += String(d);
+  updateAnswerSlots();
+}
+
+function clearDigit() {
+  SoundEngine.ensurePlaying();
+  currentInput = "";
+  updateAnswerSlots();
+}
+
+function updateAnswerSlots() {
+  if (state.activeTab === 'capture') {
+    document.getElementById('capAnswerSlot').textContent = currentInput || '?';
+  } else if (state.activeTab === 'evolve') {
+    document.getElementById('evoAnswerSlot').textContent = currentInput || '?';
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('modalBackdrop').classList.contains('hidden')) {
+    if (e.key === 'Enter' || e.key === 'Escape') closeModal();
+    return;
+  }
+  if (e.key >= '0' && e.key <= '9') pressDigit(Number(e.key));
+  else if (e.key === 'Backspace' || e.key === 'Delete') clearDigit();
+  else if (e.key === 'Enter') submitAnswer();
+});
+
+function submitAnswer() {
+  SoundEngine.ensurePlaying();
+  if (!currentInput) return;
+  const val = parseInt(currentInput, 10);
+  currentInput = "";
+
+  if (state.activeTab === 'capture') {
+    handleCaptureSubmit(val);
+  } else if (state.activeTab === 'evolve') {
+    handleEvolveSubmit(val);
+  }
+}
+
+function handleCaptureSubmit(val) {
+  const maxDan = getMaxDan();
+  const expected = state.currentDan * state.captureStep;
+  const fb = document.getElementById('captureFeedback');
+  const card = document.getElementById('captureCard');
+
+  if (val === expected) {
+    playSfx('correct');
+    fb.className = 'min-h-[20px] text-xs font-extrabold mt-1 text-emerald-600';
+    fb.textContent = `정답! ${state.currentDan} × ${state.captureStep} = ${expected}`;
+
+    if (state.captureStep >= maxDan) {
+      const worldList = getWorldPokedex(state.world);
+      const poke = worldList.find(p => p.dan === state.currentDan);
+      const balls = ['몬스터볼 🔴', '슈퍼볼 🔵', '하이퍼볼 🟡'];
+      const pickedBall = balls[Math.floor(Math.random() * balls.length)];
+      const isFirstClear = !poke.captured;
+
+      poke.captured = true;
+      if (!poke.ballType) poke.ballType = pickedBall;
+      state.shieldCount += 1;
+      state.captureStep = 1;
+
+      if (state.currentDan < maxDan) {
+        state.currentDan += 1;
+      }
+
+      saveState();
+      playSfx('fanfare');
+
+      const allWorldCaptured = worldList.every(p => p.captured);
+      showModal(isFirstClear ? `신난다! ${poke.stages[0].name} 포획 성공!` : `${poke.dan}단 퍼펙트 복습 완료!`, `
+        <div class="text-xs font-extrabold text-indigo-600 mb-1">${pickedBall}로 포획했다!</div>
+        <img src="${poke.stages[0].img}" class="w-32 h-32 object-contain mx-auto">
+        <p class="text-sm text-slate-700 my-2">
+          보너스 아이템 <b>🛡️ 기력의 조각 +1개</b> 획득!<br>
+          ${allWorldCaptured ? `<b>🎉 World ${state.world} 포켓몬 포획 완료!</b>` : `다음 <b>${state.currentDan}단</b>에 도전할 준비 완료!`}
+        </p>
+      `, [
+        allWorldCaptured
+          ? { text: '⚡ 거다이맥스 진화하러 가기', primary: true, action: () => { closeModal(); switchTab('evolve'); }}
+          : { text: '계속 도전하기! 🔥', primary: true, action: () => { closeModal(); renderAll(); }}
+      ]);
+    } else {
+      state.captureStep += 1;
+      saveState();
+      renderCaptureScreen();
+    }
+  } else {
+    playSfx('wrong');
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+    fb.className = 'min-h-[20px] text-xs font-extrabold mt-1 text-rose-600';
+    fb.textContent = `앗! ${state.currentDan} × ${state.captureStep} = ${expected} 이야! 1번부터 다시 도전!`;
+    state.captureStep = 1;
+    saveState();
+    renderCaptureScreen();
+  }
+}
+
+function handleEvolveSubmit(val) {
+  const partner = state.pokedex.find(p => p.id === state.activePartnerId);
+  if (!partner) return;
+
+  stopEvoTimer();
+  const expected = evoQuestion.a * evoQuestion.b;
+  const fb = document.getElementById('evolveFeedback');
+  const card = document.getElementById('evolveCard');
+  const imgEl = document.getElementById('evolvePokeImg');
+
+  if (val === expected) {
+    playSfx('correct');
+    partner.currentCombo += 1;
+    fb.className = 'min-h-[20px] text-xs font-extrabold mt-1 text-emerald-600';
+    fb.textContent = `명중! ${evoQuestion.a} × ${evoQuestion.b} = ${expected} (${partner.currentCombo}연속!)`;
+
+    imgEl.classList.add('bounce');
+    setTimeout(() => imgEl.classList.remove('bounce'), 220);
+
+    let evolvedTo = null;
+    if (partner.currentCombo === 5 && partner.stage < 1) {
+      partner.stage = 1;
+      evolvedTo = partner.stages[1];
+    } else if (partner.currentCombo === 10 && partner.stage < 2) {
+      partner.stage = 2;
+      evolvedTo = partner.stages[2];
+    } else if (partner.currentCombo >= 20 && partner.stage < 3) {
+      partner.stage = 3;
+      evolvedTo = partner.stages[3];
+    }
+
+    generateEvoQuestion();
+    saveState();
+
+    if (evolvedTo) {
+      playSfx('fanfare');
+      const isGmax = partner.stage === 3;
+      if (isGmax) {
+        state.activePartnerId = null;
+        saveState();
+      }
+      showModal(isGmax ? '👑 거다이맥스 각성 완료!' : '✨ 축하합니다! 진화 성공!', `
+        <img src="${evolvedTo.img}" class="w-36 h-36 object-contain mx-auto">
+        <p class="text-base font-extrabold text-pink-600 my-2">
+          ${evolvedTo.name}(으)로 진화했습니다!
+        </p>
+        <p class="text-xs text-slate-600">
+          ${isGmax ? '완벽한 마스터가 되었습니다! 다음 진화시킬 포켓몬을 선택하세요.' : '진화 단계가 저장되었습니다! 계속해서 거다이맥스를 노려보세요!'}
+        </p>
+      `, [
+        { text: isGmax ? '다음 파트너 고르기 ⚡' : '계속 진화시키기! 🔥', primary: true, action: () => {
+          closeModal();
+          updateDynamicBgm();
+          renderAll();
+        }}
+      ]);
+    } else {
+      renderEvolveBattle(partner);
+      startEvoTimer();
+    }
+  } else {
+    playSfx('wrong');
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+    fb.className = 'min-h-[20px] text-xs font-extrabold mt-1 text-rose-600';
+
+    if (state.shieldCount > 0) {
+      state.shieldCount -= 1;
+      fb.textContent = `🛡️ 기력의 조각 발동! 오답(${expected})을 막고 ${partner.currentCombo}콤보 유지!`;
+    } else {
+      const checkpoint = partner.currentCombo >= 10 ? 10 : (partner.currentCombo >= 5 ? 5 : 0);
+      partner.currentCombo = checkpoint;
+      fb.textContent = `앗! 정답은 ${expected}! 체크포인트(${checkpoint}콤보)에서 다시 시작!`;
+    }
+
+    generateEvoQuestion();
+    saveState();
+    renderAll();
+  }
+}
+
+// ==========================================
+// 7. 모달 및 부모님 설정 메뉴
+// ==========================================
+function showModal(title, bodyHtml, buttons) {
+  stopEvoTimer();
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  const act = document.getElementById('modalActions');
+  act.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.primary
+      ? 'flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-2xl font-jua text-base transition'
+      : 'flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 px-3 rounded-2xl font-jua text-base transition';
+    btn.textContent = b.text;
+    btn.onclick = b.action;
+    act.appendChild(btn);
+  });
+  const backdrop = document.getElementById('modalBackdrop');
+  backdrop.classList.remove('hidden');
+  backdrop.classList.add('flex');
+}
+
+function closeModal() {
+  const backdrop = document.getElementById('modalBackdrop');
+  backdrop.classList.add('hidden');
+  backdrop.classList.remove('flex');
+  if (state.activeTab === 'evolve' && state.activePartnerId) {
+    startEvoTimer();
+  }
+}
+
+function openSettingsModal() {
+  SoundEngine.ensurePlaying();
+  showModal('⚙️ 부모님 & 리그 설정', `
+    <p class="text-xs text-slate-500 mb-3">
+      리그를 전환해도 기존에 포획·진화한 도감(28종)은 그대로 보존됩니다.
+    </p>
+    <div class="flex flex-col gap-2">
+      <button onclick="switchWorld(1)" class="w-full bg-emerald-600 text-white py-2.5 rounded-2xl font-jua text-base">🌿 World 1: 1~9단 기본 리그</button>
+      <button onclick="switchWorld(2)" class="w-full bg-purple-600 text-white py-2.5 rounded-2xl font-jua text-base">🌌 World 2: 1~19단 전설 리그</button>
+      <button onclick="unlockCurrentWorldForPreview()" class="w-full bg-slate-100 text-slate-800 py-2.5 rounded-2xl font-jua text-sm">🔴 현재 리그 전체 포획 + 실드 5개</button>
+      <button onclick="resetAllData()" class="w-full bg-rose-50 text-rose-700 py-2.5 rounded-2xl font-jua text-sm">🗑️ 전체 데이터 초기화</button>
+    </div>
+  `, [
+    { text: '닫기', primary: false, action: closeModal }
+  ]);
+}
+
+function switchWorld(w) {
+  state.world = w;
+  state.currentDan = 1;
+  state.captureStep = 1;
+  saveState();
+  closeModal();
+  updateDynamicBgm();
+  renderAll();
+}
+
+function unlockCurrentWorldForPreview() {
+  getWorldPokedex(state.world).forEach(p => {
+    p.captured = true;
+    if (!p.ballType) p.ballType = '하이퍼볼 🟡';
+  });
+  state.shieldCount += 5;
+  saveState();
+  closeModal();
+  renderAll();
+}
+
+function resetAllData() {
+  stopEvoTimer();
+  localStorage.removeItem(STORAGE_KEY);
+  state = {
+    world: 1,
+    activeTab: 'capture',
+    currentDan: 1,
+    captureStep: 1,
+    shieldCount: 0,
+    activePartnerId: null,
+    pokedex: createUnifiedPokedex()
+  };
+  saveState();
+  closeModal();
+  updateDynamicBgm();
+  renderAll();
+}
+
+// ==========================================
+// 8. 아이패드 홈 화면 전용 512x512 몬스터볼 아이콘 생성기
+// ==========================================
+function generateAppleTouchIcon() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // 배경 그라데이션 (아이콘 라운드는 iOS가 자동 적용하므로 풀블리드로 채움)
+    const bgGrad = ctx.createLinearGradient(0, 0, 512, 512);
+    bgGrad.addColorStop(0, '#1e3a8a');
+    bgGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // 은은한 후광 효과
+    const glow = ctx.createRadialGradient(256, 256, 40, 256, 256, 230);
+    glow.addColorStop(0, 'rgba(255, 222, 0, 0.35)');
+    glow.addColorStop(1, 'rgba(255, 222, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 512, 512);
+
+    const cx = 256, cy = 256, r = 175;
+
+    // 몬스터볼 상단 (빨간색)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI, 0, false);
+    ctx.fillStyle = '#EE1515';
+    ctx.fill();
+
+    // 몬스터볼 하단 (흰색)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI, false);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+
+    // 외곽 테두리 및 중앙 가로선
+    ctx.lineWidth = 22;
+    ctx.strokeStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx - r, cy);
+    ctx.lineTo(cx + r, cy);
+    ctx.stroke();
+
+    // 중앙 버튼 외곽
+    ctx.beginPath();
+    ctx.arc(cx, cy, 54, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.lineWidth = 18;
+    ctx.strokeStyle = '#1e293b';
+    ctx.stroke();
+
+    // 중앙 버튼 내부 코어
+    ctx.beginPath();
+    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFDE00';
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#1e293b';
+    ctx.stroke();
+
+    // 상단 광택 하이라이트
+    ctx.beginPath();
+    ctx.ellipse(cx - 65, cy - 85, 32, 16, -Math.PI / 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fill();
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const appleLink = document.getElementById('appleTouchIcon');
+    const favLink = document.getElementById('favIcon');
+    if (appleLink) appleLink.href = dataUrl;
+    if (favLink) favLink.href = dataUrl;
+  } catch (e) {}
+}
+
+// 초기 실행
+generateAppleTouchIcon();
+loadState();
+generateEvoQuestion();
+renderAll();
+</script>
+</body>
+</html>
